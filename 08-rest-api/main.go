@@ -51,9 +51,49 @@ func getProductsHandler(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// HANDLER 2: POST /api/products (Tambah Produk Baru)
+func createProductHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	// 1. Guard Clause: Hanya izinkan method POST
+	if r.Method != http.MethodPost {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		json.NewEncoder(w).Encode(Response{
+			Success: false,
+			Message: "Method tidak diizinkan! Gunakan POST.",
+		})
+		return
+	}
+
+	// 2. Decode Request Body (JSON) ke Struct
+	var newProduct Product
+	err := json.NewDecoder(r.Body).Decode(&newProduct)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(Response{
+			Success: false,
+			Message: "Format JSON tidak valid!",
+		})
+		return
+	}
+
+	// 3. Auto-increment ID sederhana & append ke slice products
+	newProduct.ID = len(products) + 1
+	products = append(products, newProduct)
+
+	// 4. Return response sukses (201 Created)
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(Response{
+		Success: true,
+		Message: "Produk berhasil ditambahkan!",
+		Data:    newProduct,
+	})
+}
+
 func main() {
 	// 3. Routing Endpoint
 	http.HandleFunc("/api/products", getProductsHandler)
+	http.HandleFunc("/api/products/create", createProductHandler)
 
 	fmt.Println("Server berjalan di http://localhost:8080...")
 
